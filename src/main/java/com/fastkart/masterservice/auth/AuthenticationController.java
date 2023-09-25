@@ -33,7 +33,7 @@ public class AuthenticationController {
         responseMap.put("statusCode", HttpStatus.CREATED.value());
         return ResponseEntity.status(HttpStatus.CREATED).body(responseMap);
     }
-    @PostMapping("/authenticate")
+    @PostMapping("/login")
     public ResponseEntity<AuthenticationResponse> authenticate(
             @RequestBody AuthenticationRequest request
     ) {
