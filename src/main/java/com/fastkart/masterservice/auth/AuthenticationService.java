@@ -2,6 +2,8 @@ package com.fastkart.masterservice.auth;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fastkart.masterservice.config.JwtService;
+import com.fastkart.masterservice.controller.Controller;
+import com.fastkart.masterservice.model.User;
 import com.fastkart.masterservice.token.Token;
 import com.fastkart.masterservice.token.TokenRepository;
 import com.fastkart.masterservice.token.TokenType;
@@ -10,9 +12,11 @@ import com.fastkart.masterservice.user.UserTokenRepository;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import lombok.RequiredArgsConstructor;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpHeaders;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
+import org.springframework.security.core.parameters.P;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
@@ -27,6 +31,9 @@ public class AuthenticationService {
     private final JwtService jwtService;
     private final AuthenticationManager authenticationManager;
 
+    @Autowired
+    private Controller controller;
+
     public AuthenticationResponse register(RegisterRequest request) {
         var user = UserToken.builder()
                 .firstname(request.getFirstname())
@@ -39,6 +46,12 @@ public class AuthenticationService {
         var jwtToken = jwtService.generateToken(user);
         var refreshToken = jwtService.generateRefreshToken(user);
         saveUserToken(savedUser, jwtToken);
+
+        if(request.getRole().toString().equals("SELLER") || request.getRole().toString().equals("BUYER")){
+            User userObject = new User(request.getUsername(),request.getPassword(),request.getRole().toString());
+            controller.signup(userObject);
+        }
+
         return AuthenticationResponse.builder()
                 .accessToken(jwtToken)
                 .refreshToken(refreshToken)

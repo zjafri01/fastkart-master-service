@@ -1,6 +1,7 @@
 package com.fastkart.masterservice.model;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
+import com.fastkart.masterservice.user.Role;
 import jakarta.persistence.*;
 import lombok.*;
 
@@ -32,4 +33,9 @@ public class User {
     @JsonIgnore
     private List<Product> product;
 
+    public User(String username, String password, String role) {
+        this.username = username;
+        this.password = password;
+        this.role = role;
+    }
 }
