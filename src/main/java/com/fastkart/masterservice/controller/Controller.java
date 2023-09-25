@@ -6,12 +6,14 @@ import com.fastkart.masterservice.service.UserService;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.*;
+import org.springframework.util.LinkedMultiValueMap;
+import org.springframework.util.MultiValueMap;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.client.RestTemplate;
+import org.springframework.web.multipart.MultipartFile;
 
-import java.util.HashMap;
-import java.util.LinkedHashMap;
-import java.util.Locale;
+import java.io.IOException;
+import java.util.*;
 
 @RestController
 @RequestMapping("/fastkart")
@@ -34,13 +36,14 @@ public class Controller {
     @PostMapping("/signup")
     public ResponseEntity<Object> signup(@RequestBody User user){
         responseMap.clear();
-        log.info("Request received to create a new userToken");
+        log.info("Request received to create a new user");
         if(userService.signup(user)){
             log.info("Request Completed");
             responseMap.put("successMessage","signup successful new account for "+user.getRole().toLowerCase(Locale.ROOT)+" created");
-            responseMap.put("statusCode",HttpStatus.OK.value());
+            responseMap.put("statusCode",HttpStatus.CREATED.value());
+            user.setPassword("*********");
             responseMap.put("user",user);
-            return ResponseEntity.status(HttpStatus.OK).body(responseMap);
+            return ResponseEntity.status(HttpStatus.CREATED).body(responseMap);
         }
 
         log.error("BAD REQUEST: User Already Exists With the Username");
@@ -51,10 +54,10 @@ public class Controller {
         return ResponseEntity.status(HttpStatus.BAD_REQUEST).headers(headers).body(responseMap);
     }
 
-    @PostMapping("/login")
+    /*@PostMapping("/login")
     public ResponseEntity<Object> login(@RequestBody User user){
         responseMap.clear();
-        log.info("Request received to login a userToken");
+        log.info("Request received to login a user");
 
         if(userService.login(user)){
             sessionMap.put(user.getUsername(), user.getRole());
@@ -62,33 +65,34 @@ public class Controller {
             responseMap.put("statusCode",HttpStatus.OK.value());
             return ResponseEntity.status(HttpStatus.OK).body(responseMap);
         }
-        responseMap.put("errorMessage","Incorrect Credentials");
+        responseMap.put("errorMessage","Wrong password!");
         responseMap.put("statusCode",HttpStatus.FORBIDDEN.value());
         return ResponseEntity.status(HttpStatus.FORBIDDEN).body(responseMap);
-    }
+    }*/
 
-    @PostMapping("/logout")
+    /*@PostMapping("/logout")
     public ResponseEntity<Object> logout(@RequestBody User user){
         responseMap.clear();
         log.info("Request received to logout a user");
 
-        if(!checkIsValidSession(user.getUsername())){
+        *//*if(!checkIsValidSession(user.getUsername())){
             responseMap.put("errorMessage",invalidSessionMessage);
             responseMap.put("statusCode",HttpStatus.FORBIDDEN.value());
             return ResponseEntity.status(HttpStatus.FORBIDDEN).body(responseMap);
-        }
+        }*//*
 
         sessionMap.remove(user.getUsername());
         responseMap.put("successMessage","User Logged Out Successfully");
         responseMap.put("statusCode",HttpStatus.OK.value());
         return ResponseEntity.status(HttpStatus.OK).body(responseMap);
-    }
+    }*/
 
     @PostMapping("/seller/viewProducts")
     public ResponseEntity<Object> sellerViewProducts(@RequestBody User user){
-        if(!checkIsValidSession(user.getUsername())){
+        responseMap.clear();
+        /*if(!checkIsValidSession(user.getUsername())){
             return ResponseEntity.status(HttpStatus.FORBIDDEN).body(invalidSessionMessage);
-        }
+        }*/
 
         log.info("Request received to view seller products");
 
@@ -97,14 +101,20 @@ public class Controller {
         HttpEntity<User> entity = new  HttpEntity<>(user,headers);
         ResponseEntity<Object> response = restTemplate.exchange("http://localhost:8081/seller/viewProducts", HttpMethod.POST, entity, Object.class);
 
+        /*if(Objects.equals(response.getBody(), List.of())){
+            responseMap.put("message","There are no products added, please add new products to sell!");
+            responseMap.put("statusCode",HttpStatus.OK.value());
+            return ResponseEntity.status(HttpStatus.OK).body(responseMap);
+        }*/
         return ResponseEntity.status(HttpStatus.OK).body(response.getBody());
     }
 
     @PostMapping("/buyer/viewProducts")
     public ResponseEntity<Object> buyerViewProducts(@RequestBody User user){
-        if(!checkIsValidSession(user.getUsername())){
+        responseMap.clear();
+        /*if(!checkIsValidSession(user.getUsername())){
             return ResponseEntity.status(HttpStatus.FORBIDDEN).body(invalidSessionMessage);
-        }
+        }*/
 
         log.info("Request received to view buyer products");
 
@@ -118,17 +128,36 @@ public class Controller {
 
     @PostMapping("/seller/addProducts")
     public ResponseEntity<Object> sellerAddProduct(@RequestBody Product product){
+        responseMap.clear();
         log.info("Request received to add seller products");
 
-        if(!checkIsValidSession(product.getUsername())){
+        /*if(!checkIsValidSession(product.getUsername())){
             return ResponseEntity.status(HttpStatus.FORBIDDEN).body(invalidSessionMessage);
-        }
+        }*/
 
         HttpHeaders headers = new HttpHeaders();
         headers.setContentType(MediaType.APPLICATION_JSON);
         HttpEntity<Product> entity = new  HttpEntity<>(product, headers);
         ResponseEntity<Object> response = restTemplate.exchange("http://localhost:8081/seller/addProducts", HttpMethod.POST, entity, Object.class);
 
+        responseMap.put("product",response.getBody());
+        responseMap.put("statusCode",HttpStatus.OK.value());
+        return ResponseEntity.status(HttpStatus.OK).body(responseMap);
+    }
+
+    @PostMapping("/seller/addProducts/importFile")
+    public ResponseEntity<Object> sellerAddProductImportFile(@RequestParam("file") MultipartFile excelDataFile) throws IOException {
+        log.info("Request received to add seller products from Excel File");
+
+        HttpHeaders headers = new HttpHeaders();
+        headers.setContentType(MediaType.MULTIPART_FORM_DATA);
+
+        MultiValueMap<String, Object> form = new LinkedMultiValueMap<>();
+        form.add("file", excelDataFile.getBytes());
+
+        HttpEntity<MultiValueMap<String, Object>> entity = new  HttpEntity<>(form, headers);
+
+        ResponseEntity<Object> response = restTemplate.exchange("http://localhost:8081/seller/addProducts/importFile", HttpMethod.POST, entity, Object.class);
         return ResponseEntity.status(HttpStatus.OK).body(response.getBody());
     }
 
@@ -136,9 +165,9 @@ public class Controller {
     public ResponseEntity placeBid(@RequestBody Product product){
         log.info("Request received to place a bid for product");
 
-        if(!checkIsValidSession(product.getUsername())){
+        /*if(!checkIsValidSession(product.getUsername())){
             return ResponseEntity.status(HttpStatus.FORBIDDEN).body(invalidSessionMessage);
-        }
+        }*/
 
         HttpHeaders headers = new HttpHeaders();
         headers.setContentType(MediaType.APPLICATION_JSON);
@@ -159,11 +188,11 @@ public class Controller {
         return new ResponseEntity<String>(response.getBody(), HttpStatus.OK);
     }
 
-    private boolean checkIsValidSession(String username) {
+    /*private boolean checkIsValidSession(String username) {
         if(!sessionMap.containsKey(username)){
             invalidSessionMessage.put("errorMessage","User is not available in the current users logged-in session, please login again.");
             return false;
         }
         return true;
-    }
+    }*/
 }

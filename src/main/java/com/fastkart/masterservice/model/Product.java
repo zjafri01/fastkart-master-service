@@ -35,6 +35,9 @@ public class Product {
     private String name;
 
     @Column
+    private String category;
+
+    @Column
     private String description;
 
     @JsonFormat(pattern = "dd-MM-yyyy", shape = JsonFormat.Shape.STRING)

@@ -34,7 +34,7 @@ public class SecurityConfiguration {
                 .csrf()
                 .disable()
                 .authorizeHttpRequests()
-                .requestMatchers("/api/v1/auth/**")
+                .requestMatchers("/api/v1/auth/**","/fastkart/signup","/fastkart/login")
                 .permitAll()
                 .requestMatchers("/fastkart/seller/**").hasRole(SELLER.name())
                 .requestMatchers("/fastkart/buyer/**").hasRole(BUYER.name())
